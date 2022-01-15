@@ -190,12 +190,18 @@ Session* SessionFactory::create( const SessionID& sessionID,
     pSession->setRefreshOnLogon( settings.getBool( REFRESH_ON_LOGON ) );
   if ( settings.has( MILLISECONDS_IN_TIMESTAMP ) )
     pSession->setTimestampPrecision(3);
-  if ( settings.has( TIMESTAMP_PRECISION ) )
-    pSession->setTimestampPrecision(settings.getInt( TIMESTAMP_PRECISION ) );
   if ( settings.has( PERSIST_MESSAGES ) )
     pSession->setPersistMessages( settings.getBool( PERSIST_MESSAGES ) );
   if ( settings.has( VALIDATE_LENGTH_AND_CHECKSUM ) )
     pSession->setValidateLengthAndChecksum( settings.getBool( VALIDATE_LENGTH_AND_CHECKSUM ) );
+  if ( settings.has( PASSWORD ) )
+    pSession->setPassword(settings.getString( PASSWORD ) );
+  if ( settings.has( NEW_PASSWORD ) )
+    pSession->setNewPassword(settings.getString( NEW_PASSWORD ) );
+  if ( settings.has( LANGUAGE_ID ) )
+    pSession->setLanguageId(settings.getString( LANGUAGE_ID ) );
+  if ( settings.has( USE_SIGNATURE ) )
+    pSession->setUseSignature(settings.getBool( USE_SIGNATURE ) );
    
   return pSession.release();
 }

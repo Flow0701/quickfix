@@ -27,12 +27,17 @@
 #include "Values.h"
 #include <algorithm>
 #include <iostream>
-
+#include <boost/beast/core.hpp>
+#include <boost/beast/ssl.hpp>
+#include <boost/beast/websocket.hpp>
+#include <boost/beast/websocket/ssl.hpp>
 namespace FIX
 {
 Session::Sessions Session::s_sessions;
 Session::SessionIDs Session::s_sessionIDs;
 Session::Sessions Session::s_registered;
+MsgSeqNum Session::s_msgSeqNum = 0;
+int Session::s_StopIncrMsgSeqNum = 0;
 Mutex Session::s_mutex;
 
 #define LOGEX( method ) try { method; } catch( std::exception& e ) \
@@ -158,7 +163,7 @@ void Session::next( const UtcTimeStamp& timeStamp )
       disconnect();
     }
 
-    if ( m_state.withinHeartBeat() ) return ;
+
 
     if ( m_state.timedOut() )
     {
@@ -660,17 +665,50 @@ EXCEPT ( IOException )
   if( m_persistMessages )
     m_state.set( msgSeqNum, messageString );
   m_state.incrNextSenderMsgSeqNum();
+  message.getHeader().getField( msgSeqNum );
+  Session::s_msgSeqNum = msgSeqNum;
+}
+
+std::string b2a_hex(unsigned char* byte_arr, int n) {
+
+	const static std::string HexCodes = "0123456789abcdef";
+	std::string HexString;
+	for (int i = 0; i < n; ++i) {
+		unsigned char BinValue = byte_arr[i];
+		HexString += HexCodes[(BinValue >> 4) & 0x0F];
+		HexString += HexCodes[BinValue & 0x0F];
+	}
+	return HexString;
+}
+
+std::string hmac_sha256(const char* key, const char* data)
+{
+	HMAC_CTX* ctx = HMAC_CTX_new();
+	unsigned char result[SHA256_DIGEST_LENGTH];
+	unsigned int len = SHA256_DIGEST_LENGTH;
+	HMAC_Init_ex(ctx, key, strlen(key), EVP_sha256(), NULL);
+	HMAC_Update(ctx, (unsigned char*)data, strlen(data));
+	HMAC_Final(ctx, result, &len);
+	HMAC_CTX_free(ctx);
+	return b2a_hex(result, SHA256_DIGEST_LENGTH);//base64_encode(result, SHA256_DIGEST_LENGTH);
 }
 
 void Session::generateLogon()
 {
   SmartPtr<Message> pMsg(newMessage("A"));
   Message & logon = *pMsg;
-
+  auto newPassword = m_state.newPassword();
+  auto languageID = m_state.languageId();
   logon.getHeader().setField( MsgType( "A" ) );
   logon.setField( EncryptMethod( 0 ) );
   logon.setField( m_state.heartBtInt() );
-  if( m_sessionID.isFIXT() )
+  logon.setField( Password(m_state.password()) );
+
+ if (newPassword.length())
+    logon.setField(NewPassword(newPassword));
+ if (languageID.length())
+    logon.setField(LanguageID(languageID));
+ if( m_sessionID.isFIXT() )
     logon.setField( DefaultApplVerID(m_senderDefaultApplVerID) );  
   if( m_refreshOnLogon )
     refresh();
@@ -678,6 +716,15 @@ void Session::generateLogon()
     m_state.reset();
   if( shouldSendReset() )
     logon.setField( ResetSeqNumFlag(true) );
+  if (m_state.useSignature()) {
+    std::cout<< "generate and send signature" << std::endl;
+    //sending_time,  # SendingTime
+    //'A',  # MsgType
+    //'1',  # MsgSeqNum
+    //api_key,  # SenderCompID
+    //'FTX',  # TargetCompID
+    //logon.getField()
+  }
 
   fill( logon.getHeader() );
   UtcTimeStamp now;

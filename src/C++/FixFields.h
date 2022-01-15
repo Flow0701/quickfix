@@ -1535,5 +1535,6 @@ namespace FIX
   DEFINE_INT(StreamAsgnAckType);
   DEFINE_UTCTIMESTAMP(RelSymTransactTime);
   DEFINE_INT(StreamAsgnType);
+  DEFINE_STRING(LanguageID);
 }
 #endif //FIX_FIELDS_H

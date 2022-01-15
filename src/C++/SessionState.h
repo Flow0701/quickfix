@@ -41,7 +41,7 @@ class SessionState : public MessageStore, public Log
 public:
   SessionState()
 : m_enabled( true ), m_receivedLogon( false ),
-  m_sentLogout( false ), m_sentLogon( false ),
+  m_sentLogout( false ), m_sentLogon( false ), m_useSignature( false ),
   m_sentReset( false ), m_receivedReset( false ),
   m_initiate( false ), m_logonTimeout( 10 ), 
   m_logoutTimeout( 2 ), m_testRequest( 0 ),
@@ -59,6 +59,9 @@ public:
   bool sentLogon() const { return m_sentLogon; }
   void sentLogon( bool value ) { m_sentLogon = value; }
 
+  bool useSignature() const { return m_useSignature; }
+  void useSignature( bool value ) { m_useSignature = value; }
+
   bool receivedReset() const { return m_receivedReset; }
   void receivedReset( bool value ) { m_receivedReset = value; }
 
@@ -73,6 +76,15 @@ public:
 
   int logoutTimeout() const { return m_logoutTimeout; }
   void logoutTimeout( int value ) { m_logoutTimeout = value; }
+
+  std::string password() const { return m_password; }
+  void password( std::string const& value ) { m_password = value; }
+
+  std::string newPassword() const { return m_newPassword; }
+  void newPassword( std::string const& value ) { m_newPassword = value; }
+
+  std::string languageId() const { return m_languageId; }
+  void languageId( std::string const& value ) { m_languageId = value; }
 
   int testRequest() const { return m_testRequest; }
   void testRequest( int value ) { m_testRequest = value; }
@@ -209,12 +221,16 @@ private:
   bool m_receivedLogon;
   bool m_sentLogout;
   bool m_sentLogon;
+  bool m_useSignature;
   bool m_sentReset;
   bool m_receivedReset;
   bool m_initiate;
   int m_logonTimeout;
   int m_logoutTimeout;
   int m_testRequest;
+  std::string m_password;
+  std::string m_languageId;
+  std::string m_newPassword;
   ResendRange m_resendRange;
   HeartBtInt m_heartBtInt;
   UtcTimeStamp m_lastSentTime;

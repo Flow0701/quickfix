@@ -60,6 +60,9 @@ public:
   { return m_state.enabled(); }
 
   bool sentLogon() { return m_state.sentLogon(); }
+  bool useSignature() { return m_state.useSignature(); }
+  void setUseSignature( bool value ) EXCEPT ( IOException )
+  { m_state.useSignature( value ); }
   bool sentLogout() { return m_state.sentLogout(); }
   bool receivedLogon() { return m_state.receivedLogon(); }
   bool isLoggedOn() { return receivedLogon() && sentLogon(); }
@@ -160,6 +163,25 @@ public:
   void setLogoutTimeout ( int value )
     { m_state.logoutTimeout( value ); }
 
+  void setPassword ( std::string const& value )
+    { m_state.password( value ); }
+  std::string getPassword() 
+  {
+    return m_state.password();
+  }
+  void setNewPassword ( std::string const& value )
+    { m_state.newPassword( value ); }
+  std::string getNewPassword() 
+  {
+    return m_state.newPassword();
+  }
+  void setLanguageId ( std::string const& value )
+    { m_state.languageId( value ); }
+  std::string getLanguageId() 
+  {
+    return m_state.languageId();
+  }
+
   bool getResetOnLogon()
     { return m_resetOnLogon; }
   void setResetOnLogon ( bool value )
@@ -235,10 +257,22 @@ public:
   void disconnect();
 
   int getExpectedSenderNum() { return m_state.getNextSenderMsgSeqNum(); }
-  int getExpectedTargetNum() { return m_state.getNextTargetMsgSeqNum(); }
+  int getExpectedTargetNum() {
+      if( Session::s_StopIncrMsgSeqNum) {
+        m_state.setNextTargetMsgSeqNum(m_state.getNextTargetMsgSeqNum() - s_StopIncrMsgSeqNum);
+        Session::s_StopIncrMsgSeqNum = 0;
+      }
+     return m_state.getNextTargetMsgSeqNum();
+     }
 
   Log* getLog() { return &m_state; }
   const MessageStore* getStore() { return &m_state; }
+
+  static const MsgSeqNum msgSegNum() {
+    return Session::s_msgSeqNum;
+  }
+
+  static int s_StopIncrMsgSeqNum;
 
 private:
   typedef std::map < SessionID, Session* > Sessions;
@@ -352,6 +386,7 @@ private:
   Responder* m_pResponder;
   Mutex m_mutex;
 
+  static MsgSeqNum s_msgSeqNum;
   static Sessions s_sessions;
   static SessionIDs s_sessionIDs;
   static Sessions s_registered;
