@@ -445,7 +445,7 @@ struct UtcTimeStampConvertor
     char result[ 17+10 ]; // Maximum
     int year, month, day, hour, minute, second, fraction;
 
-    precision = clamp_of( precision, 0, 9 );
+    precision = 0; clamp_of( precision, 0, 9 );
 
     value.getYMD( year, month, day );
     value.getHMS( hour, minute, second, fraction, precision );
@@ -557,7 +557,7 @@ struct UtcTimeOnlyConvertor
     char result[ 8+10 ]; // Maximum
     int hour, minute, second, fraction;
 
-    precision = clamp_of( precision, 0, 9 );
+    precision = 0; clamp_of( precision, 0, 9 );
 
     value.getHMS( hour, minute, second, fraction, precision );
 

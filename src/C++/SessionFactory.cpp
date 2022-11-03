@@ -201,7 +201,7 @@ Session* SessionFactory::create( const SessionID& sessionID,
   if ( settings.has( LANGUAGE_ID ) )
     pSession->setLanguageId(settings.getString( LANGUAGE_ID ) );
   if ( settings.has( USE_SIGNATURE ) )
-    pSession->setUseSignature(settings.getBool( USE_SIGNATURE ) );
+    pSession->setUseSignature(settings.getString( USE_SIGNATURE ) );
    
   return pSession.release();
 }

@@ -31,6 +31,8 @@
 #include <boost/beast/ssl.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/beast/websocket/ssl.hpp>
+#include <boost/algorithm/string/join.hpp>
+
 namespace FIX
 {
 Session::Sessions Session::s_sessions;
@@ -603,7 +605,10 @@ bool Session::sendRaw( Message& message, int num )
 bool Session::send( const std::string& string )
 {
   if ( !m_pResponder ) return false;
-  m_state.onOutgoing( string );
+  int expectedTagret = getExpectedTargetNum();
+      int expectedSender = getExpectedSenderNum();
+     m_state.onIncoming( "expTagret==="+ std::to_string(expectedTagret) + "==expSender==="+std::to_string(expectedSender) );
+  m_state.onOutgoing( "send==="+string );
   return m_pResponder->send( string );
 }
 
@@ -694,7 +699,7 @@ std::string hmac_sha256(const char* key, const char* data)
 }
 
 void Session::generateLogon()
-{
+{ const auto signature = m_state.useSignature();
   SmartPtr<Message> pMsg(newMessage("A"));
   Message & logon = *pMsg;
   auto newPassword = m_state.newPassword();
@@ -702,8 +707,10 @@ void Session::generateLogon()
   logon.getHeader().setField( MsgType( "A" ) );
   logon.setField( EncryptMethod( 0 ) );
   logon.setField( m_state.heartBtInt() );
+ 
+  if (!(signature.length() > 0)) {
   logon.setField( Password(m_state.password()) );
-
+  }
  if (newPassword.length())
     logon.setField(NewPassword(newPassword));
  if (languageID.length())
@@ -716,21 +723,39 @@ void Session::generateLogon()
     m_state.reset();
   if( shouldSendReset() )
     logon.setField( ResetSeqNumFlag(true) );
-  if (m_state.useSignature()) {
-    std::cout<< "generate and send signature" << std::endl;
-    //sending_time,  # SendingTime
-    //'A',  # MsgType
-    //'1',  # MsgSeqNum
-    //api_key,  # SenderCompID
-    //'FTX',  # TargetCompID
-    //logon.getField()
-  }
 
   fill( logon.getHeader() );
   UtcTimeStamp now;
   m_state.lastReceivedTime( now );
   m_state.testRequest( 0 );
   m_state.sentLogon( true );
+  
+
+  if (signature.length() > 0) {
+    m_state.setNextSenderMsgSeqNum(1);
+
+    //SendingTime (52)
+   // MsgType (35)
+    //MsgSeqNum (34)
+    //SenderCompID (49)
+    //TargetCompID (56)
+    Header& header = logon.getHeader();
+
+    std::string values[] = {
+      header.getField(52),
+      header.getField(35),
+      header.getField(34),
+      header.getField(49),
+      header.getField(56)
+    };
+    auto data = boost::algorithm::join(values, "\x01");
+    RawData rawData(hmac_sha256(signature.c_str(), data.c_str()));
+    logon.setField(rawData);
+    std::cout<< "generate and send signature" << std::endl;
+    for(int i =0 ;i<5;i++)
+    std::cout<< values[i] << std::endl;
+
+  }
   sendRaw( logon );
 }
 
@@ -1306,8 +1331,10 @@ bool Session::nextQueued( int num, const UtcTimeStamp& timeStamp )
 void Session::next( const std::string& msg, const UtcTimeStamp& timeStamp, bool queued )
 {
   try
-  {
-    m_state.onIncoming( msg );
+  {   int expectedTagret = getExpectedTargetNum();
+      int expectedSender = getExpectedSenderNum();
+     m_state.onIncoming( "expTagret==="+ std::to_string(expectedTagret) + "==expSender==="+std::to_string(expectedSender) );
+    m_state.onIncoming( "received==="+msg );
     const DataDictionary& sessionDD = 
       m_dataDictionaryProvider.getSessionDataDictionary(m_sessionID.getBeginString());
     if( m_sessionID.isFIXT() )
@@ -1329,7 +1356,7 @@ void Session::next( const std::string& msg, const UtcTimeStamp& timeStamp, bool 
     {
       if( identifyType(msg) == MsgType_Logon )
       {
-        m_state.onEvent( "Logon message is not valid" );
+        m_state.onEvent( "Logon message is not valid " );
         disconnect();
       }
     } catch( MessageParseError& ) {}

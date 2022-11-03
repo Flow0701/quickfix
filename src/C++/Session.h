@@ -60,8 +60,8 @@ public:
   { return m_state.enabled(); }
 
   bool sentLogon() { return m_state.sentLogon(); }
-  bool useSignature() { return m_state.useSignature(); }
-  void setUseSignature( bool value ) EXCEPT ( IOException )
+  std::string useSignature() { return m_state.useSignature(); }
+  void setUseSignature( const std::string& value ) EXCEPT ( IOException )
   { m_state.useSignature( value ); }
   bool sentLogout() { return m_state.sentLogout(); }
   bool receivedLogon() { return m_state.receivedLogon(); }
@@ -221,7 +221,7 @@ public:
     }
   int getSupportedTimestampPrecision() 
     {
-      return supportsSubSecondTimestamps(m_sessionID.getBeginString()) ? m_timestampPrecision : 0;
+      return supportsSubSecondTimestamps(m_sessionID.getBeginString()) ? 0 : 0;
     }
   static bool supportsSubSecondTimestamps(const std::string &beginString) 
   {

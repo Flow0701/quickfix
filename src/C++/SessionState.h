@@ -41,7 +41,7 @@ class SessionState : public MessageStore, public Log
 public:
   SessionState()
 : m_enabled( true ), m_receivedLogon( false ),
-  m_sentLogout( false ), m_sentLogon( false ), m_useSignature( false ),
+  m_sentLogout( false ), m_sentLogon( false ),
   m_sentReset( false ), m_receivedReset( false ),
   m_initiate( false ), m_logonTimeout( 10 ), 
   m_logoutTimeout( 2 ), m_testRequest( 0 ),
@@ -59,8 +59,8 @@ public:
   bool sentLogon() const { return m_sentLogon; }
   void sentLogon( bool value ) { m_sentLogon = value; }
 
-  bool useSignature() const { return m_useSignature; }
-  void useSignature( bool value ) { m_useSignature = value; }
+  std::string useSignature() const { return m_useSignature; }
+  void useSignature( const std::string& value ) { m_useSignature = value; }
 
   bool receivedReset() const { return m_receivedReset; }
   void receivedReset( bool value ) { m_receivedReset = value; }
@@ -145,7 +145,7 @@ public:
   bool timedOut() const
   {
     UtcTimeStamp now;
-    return ( now - lastReceivedTime() ) >= ( 2.4 * ( double ) heartBtInt() );
+    return ( now - lastReceivedTime() ) >= ( 3.4 * ( double ) heartBtInt() );
   }
   bool needHeartbeat() const
   {
@@ -221,7 +221,7 @@ private:
   bool m_receivedLogon;
   bool m_sentLogout;
   bool m_sentLogon;
-  bool m_useSignature;
+  std::string m_useSignature;
   bool m_sentReset;
   bool m_receivedReset;
   bool m_initiate;

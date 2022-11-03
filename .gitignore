@@ -1,5 +1,6 @@
 debug
 release
+cmake-build-*/
 *.user
 *.sdf
 *.opensdf
@@ -67,3 +68,5 @@ core
 *.log
 *.trs
 .vscode/
+build/
+.idea/
